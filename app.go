@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
@@ -15,7 +16,7 @@ var (
 		Username: os.Getenv("USERNAME"),
 		Password: os.Getenv("PASSWORD"),
 	}
-	filterList = map[string]struct{}{"minecraft": {}, "valheim": {}}
+	filterList = os.Getenv("FILTER")
 )
 
 func main() {
@@ -34,7 +35,7 @@ func GetStatus(c *gin.Context) {
 		var filtered []string
 
 		for k, v := range m {
-			if _, ok := filterList[k]; ok && v == "running" {
+			if strings.Contains(filterList, k) && v == "running" {
 				filtered = append(filtered, k)
 			}
 		}
