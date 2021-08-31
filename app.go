@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
 )
@@ -17,11 +18,17 @@ var (
 		Password: os.Getenv("PASSWORD"),
 	}
 	filterList = os.Getenv("FILTER")
+	origin     = os.Getenv("ORIGIN")
 )
 
 func main() {
 	router := gin.Default()
 
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{origin}
+	config.AllowMethods = []string{"GET"}
+
+	router.Use(cors.New(config))
 	router.GET("/status", GetStatus)
 	router.Run()
 }
