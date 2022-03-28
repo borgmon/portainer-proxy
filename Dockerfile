@@ -1,8 +1,11 @@
-FROM golang:alpine
-WORKDIR /go/src/app
-COPY . .
+FROM golang:1.18-alpine
+WORKDIR /app
+RUN apk add git
 
-RUN go get -d -v ./...
-RUN go install -v ./...
+COPY go.mod ./
+COPY go.sum ./
+RUN go mod download
+
+COPY . .
 
 CMD ["go","run","."]

@@ -11,10 +11,7 @@
             "mode": "auto",
             "program": "${fileDirname}",
             "env": {
-                "USERNAME":"x",
-                "PASSWORD":"x",
-                "PORTAINER_URL":"http://x/api",
-                "FILTER":"x",
+                "WHITELIST": ""
             }
         }
     ]

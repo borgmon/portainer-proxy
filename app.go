@@ -1,53 +1,82 @@
 package main
 
 import (
-	"log"
+	"context"
 	"os"
 	"strings"
 
-	"github.com/gin-contrib/cors"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
 	"github.com/gin-gonic/gin"
-	"github.com/go-resty/resty/v2"
 )
 
-var (
-	client          = resty.New()
-	portainerClient = &PortainerClient{
-		Client:   *client.SetHostURL(os.Getenv("PORTAINER_URL")),
-		Username: os.Getenv("USERNAME"),
-		Password: os.Getenv("PASSWORD"),
+func getContainers() ([]types.Container, error) {
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		return nil, err
 	}
-	filterList = os.Getenv("FILTER")
-	origin     = os.Getenv("ORIGIN")
-)
 
-func main() {
-	router := gin.Default()
-
-	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{origin}
-	config.AllowMethods = []string{"GET"}
-
-	router.Use(cors.New(config))
-	router.GET("/status", GetStatus)
-	router.Run()
+	return cli.ContainerList(context.Background(), types.ContainerListOptions{})
 }
 
-func GetStatus(c *gin.Context) {
-	m, err := portainerClient.GetStatus(false)
-	if err != nil {
-		log.Println(err)
-		c.JSON(400, gin.H{"error": "can't get status"})
-	} else {
-		var filtered []string
-
-		for k, v := range m {
-			if strings.Contains(filterList, k) && v == "running" {
-				filtered = append(filtered, k)
+func findStateByName(name string, containers []types.Container, whitelist []string) string {
+	for _, container := range containers {
+		for _, containerName := range container.Names {
+			if containerName[1:] == name && Contains(whitelist, name) {
+				return container.State
 			}
 		}
-
-		c.JSON(200, gin.H{"online": filtered})
 	}
+	return ""
+}
 
+func Contains[T comparable](s []T, e T) bool {
+    for _, v := range s {
+        if v == e {
+            return true
+        }
+    }
+    return false
+}
+
+func ParseCSVSlice(str string) []string {
+	m := []string{}
+	p := strings.Split(str, ",")
+	for _, e := range p {
+		e = strings.TrimSpace(e)
+		m = append(m, e)
+	}
+	if len(m) == 1 && m[0] == "" {
+		return nil
+	}
+	return m
+}
+
+func main() {
+	r := gin.Default()
+	whitelist := ParseCSVSlice(os.Getenv("WHITELIST"))
+
+	r.GET("/status/:name", func(c *gin.Context) {
+
+		containers, err := getContainers()
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error": err,
+			})
+			return
+		}
+		name := c.Param("name")
+		if state := findStateByName(name, containers, whitelist); state == "" {
+			c.JSON(404, gin.H{
+				"message": "Container not found",
+			})
+		} else {
+			c.JSON(200, gin.H{
+				"state": state,
+			})
+
+		}
+
+	})
+	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }

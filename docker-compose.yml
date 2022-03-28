@@ -1,17 +1,14 @@
-version: "3.4"
+version: "3.8"
 services:
   status-proxy:
     container_name: status-proxy
-    ports: 
-      - 8081:8080
     build:
       context: .
       dockerfile: ./Dockerfile
     environment:
-      - "USERNAME=x"
-      - "PASSWORD=x"
-      - "PORTAINER_URL=http://portainer:9000/api"
-      - "FILTER=minecraft,valheim"
-      - "ORIGIN=https://x"
+      - "WHITELIST="
     restart: unless-stopped
-  
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 8080:8080
