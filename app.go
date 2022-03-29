@@ -56,7 +56,7 @@ func main() {
 	r := gin.Default()
 	whitelist := ParseCSVSlice(os.Getenv("WHITELIST"))
 
-	r.GET("/status/:name", func(c *gin.Context) {
+	r.GET("/state/:name", func(c *gin.Context) {
 
 		containers, err := getContainers()
 		if err != nil {
