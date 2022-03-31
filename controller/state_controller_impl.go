@@ -13,7 +13,7 @@ type StateHandlerImpl struct {
 
 func (stateCtl *StateHandlerImpl) GetState(c *gin.Context) {
 	name := c.Param("name")
-	if !helper.Contains(stateCtl.Whitelist, name) {
+	if !helper.Contains(stateCtl.Whitelist, name) && len(stateCtl.Whitelist) != 0 {
 		c.JSON(404, gin.H{
 			"message": "Container not found",
 		})
